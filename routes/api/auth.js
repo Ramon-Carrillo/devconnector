@@ -1,6 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const auth = require('../../middleware/auth');
+const { body, validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
+const jwtKey = process.env.jwtSecretKey;
 
 const User = require('../../models/User');
 
@@ -16,5 +21,48 @@ router.get('/', auth, async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+// @route POST api/auth
+// @desc Authenticate user get token
+// @access public
+router.post(
+  '/',
+  [body('email', 'Email is required').isEmail(), body('password', 'Password is required').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password } = req.body;
+
+    try {
+      // See if the user exists
+      let user = await User.findOne({ email });
+      if (!user) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] });
+      }
+
+      // Match password
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid Credentials' }] });
+      }
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      };
+      jwt.sign(payload, jwtKey, { expiresIn: 360000 }, (err, token) => {
+        if (err) throw err;
+        res.json({ token });
+      });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server error');
+    }
+  },
+);
 
 module.exports = router;
