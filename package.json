@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Ramon-Carrillo/devconnector#readme",
   "dependencies": {
+    "-": "^0.0.1",
     "bcryptjs": "^2.4.3",
     "config": "^3.3.6",
     "dotenv": "^10.0.0",
@@ -27,6 +28,7 @@
     "gravatar": "^1.8.2",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.1.4",
+    "nodemon": "^2.0.15",
     "request": "^2.88.2"
   },
   "devDependencies": {
