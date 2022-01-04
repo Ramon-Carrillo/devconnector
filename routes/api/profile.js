@@ -1,9 +1,14 @@
+require('dotenv').config()
 const express = require('express')
+const request = require('request')
 const router = express.Router()
 const auth = require('../../middleware/auth')
 const { body, validationResult } = require('express-validator')
 const Profile = require('../../models/Profile')
 const User = require('../../models/User')
+
+const githubClientId = process.env.GITHUB_CLIENT_ID
+const githubClientSecret = process.env.GITHUB_CLIENT_SEC
 
 // @route GET api/profile/me
 // @desc Get current user profile
@@ -297,4 +302,31 @@ router.delete('/education/:exp_id', auth, async (req, res) => {
     res.status(500).send('Server error')
   }
 })
+
+//* @route GET api/profile/github/:username
+//* @desc Get user repos from github
+//* @access Public
+router.get('/github/:username', (req, res) => {
+  try {
+    const options = {
+      uri: `https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc&client_id=${githubClientId}&client_secret=${githubClientSecret}`,
+      method: 'GET',
+      headers: { 'user-agent': 'node.js' },
+    }
+
+    request(options, (err, response, body) => {
+      if (err) {
+        console.error(err)
+      }
+      if (response.statusCode !== 200) {
+        return res.status(404).json({ msg: 'No Github profile found' })
+      }
+      res.json(JSON.parse(body))
+    })
+  } catch (err) {
+    console.error(err.message)
+    res.status(500).send('Server error')
+  }
+})
+
 module.exports = router
